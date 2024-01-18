@@ -10,11 +10,15 @@ contract SimpleStorage {
 
     address internal owner;
 
+    event LogSet(address owner, address caller);
+
     constructor() {
         owner = msg.sender;
     }
 
     function set(uint _num) public {
+        emit LogSet(owner, msg.sender);
+
         require(msg.sender == owner, "no permission");
         num = _num;
     }
