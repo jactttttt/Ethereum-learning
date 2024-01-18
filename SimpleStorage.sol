@@ -1,10 +1,14 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
+interface ISimpleStorage {
+    function getOwner() external returns(address);
+}
+
 contract SimpleStorage {
     uint public num;
 
-    address public owner;
+    address internal owner;
 
     constructor() {
         owner = msg.sender;
@@ -17,6 +21,10 @@ contract SimpleStorage {
 
     function get() public view returns (uint) {
         return num;
+    }
+
+    function getOwner() external view returns(address) {
+        return owner;
     }
 }
 
@@ -35,5 +43,9 @@ contract FactoryContract {
         index += 1;
 
         return c;
+    }
+
+    function getSimpleStorageOwner(address _addr) public returns(address) {
+            return ISimpleStorage(_addr).getOwner();
     }
 }
