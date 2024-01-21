@@ -5,8 +5,26 @@ pragma solidity  ^0.8.20;
 import { MessageHashUtils } from "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
 import { ECDSA } from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
+import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
-import { Token } from "./Token.sol";
+contract Token is ERC20 {
+
+    address public factory;
+
+    constructor(string memory _name, string memory _symbol) ERC20(_name, _symbol) {
+        factory = msg.sender;
+    }
+
+    function mint(address to, uint amount) external {
+        require(msg.sender == factory, "Only factory mint");
+        _mint(to, amount);
+    } 
+
+    function burn(uint amount) external {
+        require(msg.sender == factory, "Only factory burn");
+        _burn(msg.sender, amount);
+    }
+}
 
 contract Verify is Ownable {
     mapping(address => bool) public signerMap;
