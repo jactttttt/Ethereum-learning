@@ -3,28 +3,11 @@
 pragma solidity  ^0.8.20;
 
 import { MessageHashUtils } from "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
+import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { ECDSA } from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
 import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-
-contract Token is ERC20 {
-
-    address public factory;
-
-    constructor(string memory _name, string memory _symbol) ERC20(_name, _symbol) {
-        factory = msg.sender;
-    }
-
-    function mint(address to, uint amount) external {
-        require(msg.sender == factory, "Only factory mint");
-        _mint(to, amount);
-    } 
-
-    function burn(uint amount) external {
-        require(msg.sender == factory, "Only factory burn");
-        _burn(msg.sender, amount);
-    }
-}
 
 contract Verify is Ownable {
     mapping(address => bool) public signerMap;
@@ -37,11 +20,7 @@ contract Verify is Ownable {
 
     address public token;
 
-    event CreateToken(address token);
-
-    constructor() Ownable(msg.sender) {
-        signer = msg.sender;
-
+    constructor(address _token) Ownable(msg.sender) {
         uint id;
 
         assembly {
@@ -49,32 +28,20 @@ contract Verify is Ownable {
         }
 
         chainId = id;
-    }
-
-    function createToken(string memory _name, string memory _symbol) external onlyOwner returns(address) {
-        address _token = address(new Token{salt: keccak256(abi.encode(_name, _symbol))}(_name, _symbol));
-
         token = _token;
-
-        emit CreateToken(_token);
-
-        return _token;
+        signer = msg.sender;
     }
 
     function mint(
         address _to,
-        address _token,
         uint _amount,
-        string memory _txid,
         bytes memory _sign
     ) external {
 
         bytes32 messageHash = keccak256(
             abi.encode(
                 _to,
-                _token,
                 _amount,
-                _txid,
                 chainId
             )
         );
@@ -90,6 +57,10 @@ contract Verify is Ownable {
 
         txHashMap[messageHash] = true;
 
-        Token(_token).mint(_to, _amount);
+        SafeERC20.safeTransfer(
+            IERC20(token),
+            _to,
+            _amount
+        );
     }
 }
